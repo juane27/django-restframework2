@@ -3,6 +3,7 @@
 from e_commerce.models import Comic, WishList
 from django.contrib.auth.models import User
 
+
 # Luego importamos todos los serializadores de django rest framework.
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
@@ -42,4 +43,13 @@ class TokenSerializer(serializers.ModelSerializer):
         fields = ('user', 'token')
         
 
-# TODO: Realizar el serializador para el modelo de WishList
+# tODO: Realizar el serializador para el modelo de WishList
+
+class WishListSerializer(serializers.ModelSerializer):
+    user = serializers.SlugRelatedField(read_only=True, slug_field='username')
+    comic = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = WishList
+        fields = ['id', 'user', 'comic', 'favorite', 'cart', 'wished_qty', 'bought_qty']
+        

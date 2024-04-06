@@ -16,7 +16,7 @@ from rest_framework.generics import (
     RetrieveUpdateAPIView,
     DestroyAPIView,
     GenericAPIView,
-    UpdatedAPIView,
+    UpdateAPIView,
 )
 from rest_framework.views import APIView
 # Importamos librerías para gestionar los permisos de acceso a nuestras APIs
@@ -286,5 +286,99 @@ class LoginUserAPIView(APIView):
 
 # TODO: Agregar las vistas genericas(vistas de API basadas en clases) 
 # que permitan realizar un CRUD del modelo de wish-list.
+    
+class GetWishlistAPIView(ListAPIView):
+    __doc__ = f'''{mensaje_headder}
+    `[METODO GET]`
+
+    '''
+    queryset = WishList.objects.all()
+    serializer_class = WishListSerializer
+    
+    permission_classes = (IsAuthenticated | IsAdminUser,)
+
+    # Equivale a --> permission_classes = (IsAdminUser & IsAuthenticated,)
+    # Descomentar y mostrar en clases para ver las diferencias entre 
+    # estos tipos de Authentication. Mostrar en Postman.
+
+    # HTTP Basic Authentication
+    # authentication_classes = [BasicAuthentication]
+
+    # Token Authentication
+    # authentication_classes = [TokenAuthentication]
+
+class PostWishListAPIView(CreateAPIView):
+    serializer_class = WishListSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def perform_create(self, serializer):
+        # Obtener el ID del cómic de la URL
+        comic_id = self.kwargs.get('pk')
+        
+        # Obtener la instancia del cómic correspondiente al ID proporcionado
+        comic = get_object_or_404(Comic, pk=comic_id)
+        
+        # Establecer la instancia del cómic en el contexto del serializer
+        serializer.validated_data['comic'] = comic
+
+        # Guardar la instancia de la lista de deseos
+        serializer.save()
+
+class UpdateWishListAPIView(RetrieveUpdateAPIView):
+    queryset = WishList.objects.all()
+    serializer_class = WishListSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        
+        # No necesitas obtener el comic_id de los kwargs, ya que 
+        # ya tienes la instancia de la lista de deseos.
+        
+        # Ahora, obtén el comic de la instancia actual de la lista de deseos
+        comic = instance.comic
+        
+        # Actualiza solo los campos que se proporcionan en la solicitud
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        
+        # No necesitas establecer la instancia del cómic en el serializer.
+        # Ya que solo estás actualizando la lista de deseos.
+        
+        return Response(serializer.data)
+
+class DeleteWishListAPIView(DestroyAPIView):
+    queryset = WishList.objects.all()
+    serializer_class = WishListSerializer
+    # permission_classes = (IsAuthenticated,)
+
+
+
+class GetUserFavsAPIView(APIView):
+    """
+    Vista de API para obtener los cómics favoritos de un usuario particular.
+    """
+
+    def get_queryset(self, username):
+        # Obtener el usuario según el nombre de usuario proporcionado en la URL
+        try:
+            user = User.objects.get(username=username)
+        except User.DoesNotExist:
+            raise 404
+
+        # Obtener los cómics favoritos del usuario utilizando subconsultas
+        fav_comics_ids = WishList.objects.filter(user=user, favorite=True).values_list('comic_id', flat=True)
+        fav_comics = Comic.objects.filter(id__in=fav_comics_ids)
+
+        return fav_comics
+
+    def get(self, request, username, format=None):
+        # Obtener los cómics favoritos del usuario y serializarlos
+        fav_comics = self.get_queryset(username)
+        serializer = ComicSerializer(fav_comics, many=True)
+        return Response(serializer.data)
+
+
 # TODO: Crear una vista generica modificada(vistas de API basadas en clases)
 # para traer todos los comics que tiene un usuario.

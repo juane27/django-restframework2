@@ -26,5 +26,19 @@ urlpatterns = [
     path('comics/<int:pk>/delete', DestroyComicAPIView.as_view()),
 
     # TODO: Wish-list API View
+    path('wishlist/get', GetWishlistAPIView.as_view()),
+    path('wishlist/post/<int:pk>/', PostWishListAPIView.as_view()),
+
+    path('wishlist/update/<int:pk>/', UpdateWishListAPIView.as_view()),
+
+
+    path('wishlist/delete/<int:pk>/', DeleteWishListAPIView.as_view()),
+
+
+    path('favs/<str:username>/get/', GetUserFavsAPIView.as_view(), name='user_favs'),
+    
+
+    
+    
 
 ]

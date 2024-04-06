@@ -15,8 +15,35 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
+from rest_framework import permissions
+
+
+
+schema_view = get_schema_view(
+   openapi.Info(
+      title="Inove Marvel e-commerce",
+      default_version='1.0.0',
+      description="description",
+      contact=openapi.Contact(email="info@inove.com.ar"),
+      license=openapi.License(name="Inove Coding School."),
+   ),
+   public=True,
+   permission_classes=(permissions.IsAuthenticatedOrReadOnly,),
+)
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('admin/', admin.site.urls, name='admin'),
     path('e-commerce/',include('e_commerce.api.urls')),
+    path(
+        'api-docs/swagger',
+        schema_view.with_ui('swagger', cache_timeout=0),
+        name='schema-swagger-ui'
+    ),
+    path(
+        'api-docs/redoc',
+        schema_view.with_ui('redoc', cache_timeout=0),
+        name='schema-redoc'
+    ),
 ]
